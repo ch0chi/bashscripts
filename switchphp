@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -e
+
+PHPVERSION=$(php -v | grep -o 'PHP .\..');
+TRIMMED=${PHPVERSION,,};
+CURRVERSION=${TRIMMED// /};
+BI_Yellow='\033[1;93m';
+B_Cyan='\033[1;36m';
+BG_Red='\033[41m';
+BG_Green='\033[0;102m';
+BG_Blue='\033[44m'
+BI_White='\033[1;97m';
+NC='\033[0m';
+
+if [ "$1" == "-h" ]; then
+	echo "Usage: <[new php version (ex. php7.2)]>";
+	exit 0;
+else
+	NEWVERSION=$1;
+fi;
+
+echo -e "${BI_Yellow}Disabling current version${NC} ${B_Cyan}$CURRVERSION${NC}";
+sudo a2dismod $CURRVERSION;
+echo -e "${BI_Yellow}Enabling new version${NC} ${B_Cyan}$NEWVERSION${NC}";
+sudo a2enmod $NEWVERSION;
+echo -e "${BI_Yellow}Updating alternatives with new version${NC} ${B_Cyan}$NEWVERSION${NC}";
+sudo update-alternatives --set php /usr/bin/$NEWVERSION;
+
+echo -e "${BI_Yellow}Restarting Apache2!${NC}";
+sudo systemctl restart apache2;

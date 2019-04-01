@@ -1,0 +1,71 @@
+#!/bin/bash
+
+set -e
+
+ROOT=$(drush ev "print DRUPAL_ROOT;");
+SITE=${ROOT##*/}
+BI_Yellow='\033[1;93m';
+B_Cyan='\033[1;36m';
+BG_Red='\033[41m';
+BG_Green='\033[0;102m';
+BG_Blue='\033[44m'
+BI_White='\033[1;97m';
+NC='\033[0m';
+
+if [ "$1" = "live" ] || [ "$1" = "dev" ] || [ "$1" = "test" ]; then
+	ENV=$1;
+elif [ "$1" == "-h" ]; then
+	echo "Usage: <env> [<\""note"\">(Optional), adds note to commit] [--updb run update.php (Optionl)] [--sync sync-content from live (Optional)]";
+	echo "Example: test \"a deploy messasge"\"" --updb --sync";
+	exit 0;
+else
+	echo "Site environment required! For help, use the -h flag";
+	exit 0;
+fi;
+
+if [ "$2" ]
+then
+	NOTE=$2;
+else
+	NOTE="";
+fi;
+
+if [ "$3" == "--updb" ]
+then
+	echo -n "Are you sure you want to update the environments database? This will run update.php on $ENV environment. [Y/N]";
+	read upConfirm;
+	if [[ ! "$upConfirm" =~ ^[Yy]$ ]]
+	then
+		UPDB="";
+	else
+		UPDB=--updatedb;
+	fi;
+
+fi;
+
+if [ "$4" == "--sync" ]
+then
+	echo -n "Are you sure you want to sync content? This will overrite Test env with Live env's database and files.? [Y/N]";
+	read syncConfirm;
+	if [[ ! "$syncConfirm" =~ ^[Yy]$ ]]
+	then
+		SYNC="";
+	else
+		SYNC="--sync-content";
+	fi;
+
+fi;
+
+echo -e "You are about to push changes to the ${BI_Yellow}${ENV}${NC} environment for ${BI_Yellow}${SITE}${NC}. Do you wish to continue? [Y/N]";
+read finalConfirm;
+if [[ ! "$finalConfirm" =~ ^[Yy]$ ]]
+	then
+		echo -e "${BG_Red}Script Terminated!${NC}";
+		exit 1;
+	else
+		echo -e "${BI_Yellow}Executing:${NC}\n${BI_White}${BG_Blue}terminus env:deploy ${SITE}.${ENV} --note=\""$NOTE"\" $UPDB $SYNC --cc${NC}";
+		echo -e "${NC}";
+		terminus env:deploy ${SITE}.${ENV} --note=\"${NOTE}\" $UPDB $SYNC --cc;
+fi;
+
+
