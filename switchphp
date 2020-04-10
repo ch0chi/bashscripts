@@ -14,10 +14,11 @@ BI_White='\033[1;97m';
 NC='\033[0m';
 
 if [ "$1" == "-h" ]; then
-	echo "Usage: <[new php version (ex. php7.2)]>";
+	echo "Usage: <[new php version (ex. 7.2)]>";
 	exit 0;
 else
-	NEWVERSION=$1;
+	NEWVERSION="php$1";
+	NEWVERSIONNUM="$1";
 fi;
 
 echo -e "${BI_Yellow}Disabling current version${NC} ${B_Cyan}$CURRVERSION${NC}";
@@ -26,6 +27,13 @@ echo -e "${BI_Yellow}Enabling new version${NC} ${B_Cyan}$NEWVERSION${NC}";
 sudo a2enmod $NEWVERSION;
 echo -e "${BI_Yellow}Updating alternatives with new version${NC} ${B_Cyan}$NEWVERSION${NC}";
 sudo update-alternatives --set php /usr/bin/$NEWVERSION;
+sudo update-alternatives --set phar /usr/bin/phar$NEWVERSIONNUM
+sudo update-alternatives --set phar.phar /usr/bin/phar.phar$NEWVERSIONNUM
+sudo update-alternatives --set php-config /usr/bin/php-config$NEWVERSIONNUM
+
+if [ "$NEWVERSIONNUM" != "7.0" ]; then
+	sudo update-alternatives --set phpize /usr/bin/phpize$NEWVERSIONNUM
+fi;
 
 echo -e "${BI_Yellow}Restarting Apache2!${NC}";
 sudo systemctl restart apache2;
