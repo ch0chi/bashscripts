@@ -1,0 +1,60 @@
+#!/bin/bash
+
+set -e
+resolvFile="/etc/resolv.conf"
+piholeDns="192.168.1.95"
+cloudflareDns="1.1.1.1"
+
+#########################
+# The command line help #
+#########################
+display_help() {
+  echo "Usage: $0 [option...]" >&2
+  echo
+  echo "   -l, --local             Set DNS to PiHole (for home)"
+  echo "   -a, --away              Set DNS to Cloudflare (for when not at home)"
+  echo
+  exit 1
+}
+
+#########################
+# Set desired DNS #
+# $1 = dns to use #
+# $2 = dns to comment out #
+#########################
+set_dns() {
+  #First, check if the dns exists
+  if grep -q "$1" ${resolvFile}; then
+    echo "Setting ${1} as primary dns"
+    local dns=$(grep "$1" ${resolvFile})
+    #check if dns contains comment. if so, uncomment
+    if [[ $dns == *"#"* ]]; then
+      sed -i "/${dns}/s/^#//g" $resolvFile
+    fi
+    #comment other dns
+    if grep -q "$2" ${resolvFile}; then
+      local dns2=$(grep "$2" ${resolvFile})
+      if [[ $dns2 != *"#"* ]]; then
+        sed -e "/${dns2}/ s/^#*/#/" -i $resolvFile
+      fi
+    fi
+  else
+    echo "DNS not found. Adding..."
+    sed -i -e "/nameserver ${2}/a nameserver ${1}" ${resolvFile}
+    set_dns "$1" "$2"
+  fi
+
+}
+
+#########################
+# Handler #
+########################
+if [ "$1" == "-h" ]; then
+  display_help
+elif [ "$1" == -l ]; then
+  set_dns $piholeDns $cloudflareDns
+elif [ "$1" == -a ]; then
+  set_dns $cloudflareDns $piholeDns
+else
+  echo "$1 is not a valid option. See help with -h"
+fi

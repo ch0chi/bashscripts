@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e
+
+BI_Yellow='\033[1;93m';
+B_Cyan='\033[1;36m';
+BG_Red='\033[41m';
+BG_Green='\033[0;102m';
+BG_Blue='\033[44m'
+BI_White='\033[1;97m';
+NC='\033[0m';
+
+if [ "$1" == "-h" ]; then
+	echo "Usage: getDns [(ex. getDns)]"
+	echo "Enter the number next to the connection you want to get dns records for and hit enter";
+	exit 0;
+else
+	CONN_NAME=0;
+	SAVEIFS=$IFS   # Save current IFS
+	IFS=$'\n'      # Change IFS to new line
+	activeConnections=( $(nmcli -t --fields NAME con show --active) );
+	IFS=$SAVEIFS   # Restore IFS
+
+	echo -e "${BI_White}Enter the active connection you want to retrieve dns records (1,2,3...)${NC}"
+
+	select opt in "${activeConnections[@]}"
+	do
+		echo -e "${BI_Yellow}Selected: ${opt} ${NC}";
+ 		echo -e ${B_Cyan}"$(nmcli --fields ip4.dns,ip6.dns con show "$opt")"${NC}
+ 		break;
+ 	done
+
+fi;
