@@ -1,0 +1,56 @@
+#!/bin/bash
+
+#########################
+# The command line help #
+#########################
+display_help() {
+  echo "Usage: $0 path to evernote notes directory" >&2
+  echo
+  echo "example: $0 /home/michael/Documents/evernote-backup/notes-from-manual-export"
+  exit 1
+}
+
+function iterate() {
+  local dir="$1"
+
+  for file in "$dir"/*; do
+    if [ -f "$file" ]; then
+      echo "Importing ${file}..."
+      joplin import "$file"
+    fi 
+
+    if [ -d "$file" ]; then
+      iterate "$file"
+    fi
+  done
+}
+
+function start() {
+  if [ -d "$1" ]; then
+    #iterate "$1";
+    directory="$1"
+    extension=".enex";
+    if find "$directory" -type f -name "*$extension" -print -quit | grep -q .; then
+        #iterate "$1";
+        local fileCount=`find "$directory" -name "*.enex" -type f | wc -l`;
+        echo "Found $fileCount files with a .enex extension.";
+        echo "Do you want to continue? (y/n): ";
+        read user_input
+        if [ "$user_input" == "y" ] || [ "$user_input" == "Y" ]; then
+          iterate "$1";
+        else
+          echo "Exiting..."
+        fi
+    else
+        echo "Directory $directory does not contain any files or sub-directories with the $extension extension."
+        echo
+        echo "Check the directory path and try again."
+    fi
+
+  else
+    display_help
+  fi;
+}
+
+start "$1";
+
